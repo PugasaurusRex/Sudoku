@@ -220,6 +220,9 @@ class Game(QWidget):
         self.selectorButtons[0].setStyleSheet("QPushButton {background: red}")
         self.gameLayout.addLayout(self.numLayout)
 
+        # Create matrix for storing cell notes
+        self.notes = [[[0 for i in range(9)] for j in range(9)] for k in range(9)]
+
     def SetNum(self):
         # Set previous button to not highlighted
         self.selectorButtons[self.curNum - 1].setStyleSheet("QPushButton {background: white}")
@@ -434,6 +437,30 @@ class Game(QWidget):
         location = self.layout.getItemPosition(idx)
         i = location[0]
         j = location[1]
+
+        # Only allow notes if tile is active
+        if self.activeTiles[i][j] == 1:
+            text = ""
+            # Toggle note for current number
+            if self.notes[i][j][self.curNum - 1] == 0:
+                self.notes[i][j][self.curNum - 1] = 1
+            else:
+                self.notes[i][j][self.curNum - 1] = 0
+
+            # Create text format for button text
+            for x in range(9):
+                if self.notes[i][j][x] == 1:
+                    text += str(x+1)
+                else:
+                    text += " "
+
+                text += " "
+                if x == 2 or x == 5:
+                    text += "\n"
+            
+            # Set the button text
+            button.setText(text)
+            button.setStyleSheet('QPushButton {color: blue;}')
 
     def ButtonClick(self):
          # Get button index
