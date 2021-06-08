@@ -223,8 +223,13 @@ class Game(QWidget):
         # Create matrix for storing cell notes
         self.notes = [[[0 for i in range(9)] for j in range(9)] for k in range(9)]
 
-        pprint.pprint(self.gameBoard)
+        pprint.pprint(self.board)
+
+        start = time.time()
         self.noteSolve(self.gameBoard)
+        end = time.time()
+        print("Time for note solve: " + str(end - start))
+        pprint.pprint(self.gameBoard)
         
     def SetNum(self):
         # Set previous button to not highlighted
@@ -454,9 +459,17 @@ class Game(QWidget):
                         x = k + 1
                         if x not in rowContains[i] and x not in colContains[j] and x not in sqContains[self.GetSquare(i,j)]:
                             tilesToSolve[i][j].append(x)
-        pprint.pprint(tilesToSolve)
+
+        # Repurpose col, row, and sq used to count number of possible tiles
+        rowContains = [[0 for i in range(9)]for i in range(9)]
+        colContains = [[0 for i in range(9)]for i in range(9)]
+        sqContains = [[0 for i in range(9)]for i in range(9)]
+        # Count the amount of each number per region
+        # If there is a number that has only one, find it and set it in the board
+
         # Begin Solving
         while cellsLeft > 0:
+            cellsOld = cellsLeft
             # Loop through board
             for i in range(9):
                 for j in range(9):
@@ -466,59 +479,57 @@ class Game(QWidget):
                         if len(tilesToSolve[i][j]) == 1:
                             board[i][j] = tilesToSolve[i][j][0]
                             tilesToSolve[i][j] = []
-
+                            cellsLeft -= 1
                             # Remove number from row, col, and square
-                            board = self.removeVal(i, j, self.GetSquare(i,j), str(board[i][j]), tilesToSolve)
-                            
+                            tilesToSolve = self.removeVal(i, j, self.GetSquare(i,j), int(board[i][j]), tilesToSolve)
+                        #elif tile in tileToSolve[i][j] is only one for either col, row, or sq
+                            # set it
+            if cellsLeft == cellsOld:
+                break
 
-            break
-        pprint.pprint(board)
-        pprint.pprint(tilesToSolve)
-        
-
-    def removeVal(self, i, j, sq, val, board: List[List[List[str]]]):
+    def removeVal(self, i, j, sq, val, cellBoard: List[List[List[str]]]):
         # Remove from row and column
         for a in range(9):
-            if val in board[i][a]:
-                board[i][j].remove(val)
-            if str(val) in board[a][j]:
-                board[i][j].remove(val)
+            if val in cellBoard[i][a]:
+                cellBoard[i][a].remove(val)
+            if val in cellBoard[a][j]:
+                cellBoard[a][j].remove(val)
 
         # Remove from square
         if sq == 0:
           starti = 0
           startj = 0
         elif sq == 1:
-          starti = 3
-          startj = 0
-        elif sq == 2:
-          starti = 5
-          startj = 0
-        elif sq == 3:
           starti = 0
           startj = 3
+        elif sq == 2:
+          starti = 0
+          startj = 6
+        elif sq == 3:
+          starti = 3
+          startj = 0
         elif sq == 4:
           starti = 3
           startj = 3
         elif sq == 5:
-          starti = 5
-          startj = 3
-        elif sq == 6:
-          starti = 0
-          startj = 5
-        elif sq == 7:
           starti = 3
-          startj = 5
+          startj = 6
+        elif sq == 6:
+          starti = 6
+          startj = 0
+        elif sq == 7:
+          starti = 6
+          startj = 3
         elif sq == 8:
-          starti = 5
-          startj = 5
+          starti = 6
+          startj = 6
 
         for x in range(starti, starti + 3):
                 for y in range(startj, startj + 3):
-                    if val in board[i][j]:
-                        board[i][j].remove(val)
+                    if val in cellBoard[x][y]:
+                        cellBoard[x][y].remove(val)
 
-        return board
+        return cellBoard
 
     def rowCounter(self, row, col):
         if (col + 1) % 9 == 0:
