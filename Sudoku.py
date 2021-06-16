@@ -18,6 +18,7 @@ class MainWindow(QMainWindow):
         self.setWindowTitle("Sudoku")
         self.setWindowIcon(QIcon('Images/icon.png'))
         self.setGeometry(50, 50, 800, 800)
+        self.setStyleSheet("background-color: #1e1e1e")
 
         # Create central widget
         self.centralWidget = QStackedWidget()
@@ -64,29 +65,40 @@ class MainWindow(QMainWindow):
 class Menu(QWidget):
     def __init__(self, parent = None):
         super(Menu, self).__init__(parent)
+
         self.layout = QVBoxLayout()
         self.setLayout(self.layout)
         self.layout.setAlignment(Qt.AlignCenter)
-        self.layout.setSpacing(0)
+        self.layout.setSpacing(4)
 
         self.tiles = 43
+
+        # Label for title
+        title = QLabel()
+        title.setText("Sudoku")
+        title.setStyleSheet("QLabel {color: white; padding: 15px}")
+        title.setFont(QFont('forte', 70))
+        self.layout.addWidget(title)
 
         # Button to start game
         buttonStart = QPushButton(self)
         buttonStart.setText("Start Game")
         buttonStart.clicked.connect(self.parent().StartGame)
+        buttonStart.setStyleSheet("QPushButton {color: white; background-color: #1e1e1e; border-style: outset; border-color: #3e3d41; border-width: 2px; border-radius: 10px; padding: 6px;}" "QPushButton:hover { background-color: #3e3d41 }")
         self.layout.addWidget(buttonStart)
 
         # Button to exit game
         buttonExit = QPushButton(self)
         buttonExit.setText("Quit")
         buttonExit.clicked.connect(self.parent().Exit)
+        buttonExit.setStyleSheet("QPushButton {color: white; background-color: #1e1e1e; border-style: outset; border-color: #3e3d41; border-width: 2px; border-radius: 10px; padding: 6px;}" "QPushButton:hover { background-color: #3e3d41 }")
         self.layout.addWidget(buttonExit)
 
         # Difficulty combo box
         # Label
         lc = QLabel()
         lc.setText("Choose a Difficulty")
+        lc.setStyleSheet("QLabel {color: white}")
         self.layout.addWidget(lc)
 
         # Combo Box
@@ -96,6 +108,7 @@ class Menu(QWidget):
         combo.addItem("Hard")
         combo.addItem("Expert")
         combo.activated[str].connect(self.SetDifficulty)
+        combo.setStyleSheet("QComboBox {color: white; background-color: #3e3d41;}" "QComboBox QAbstractItemView {color: white; background: #3e3d41; selection-background-color: #3e3d41;}")
         self.layout.addWidget(combo)
 
     def SetDifficulty(self, text):
@@ -136,6 +149,7 @@ class Game(QWidget):
         toolButton.setCheckable(True)
         toolButton.setAutoExclusive(True)
         toolButton.clicked.connect(self.parent().SetMenu)
+        toolButton.setStyleSheet("QToolButton {color: white; background-color: #1e1e1e; padding: 6px;}" "QToolButton:hover { background-color: #3e3d41 }")
         toolBar.addWidget(toolButton)
 
         toolButton = QToolButton()
@@ -143,9 +157,11 @@ class Game(QWidget):
         toolButton.setCheckable(True)
         toolButton.setAutoExclusive(True)
         toolButton.clicked.connect(self.parent().StartGame)
+        toolButton.setStyleSheet("QToolButton {color: white; background-color: #1e1e1e; padding: 6px;}" "QToolButton:hover { background-color: #3e3d41 }")
         toolBar.addWidget(toolButton)
 
         self.mistakeLabel = QLabel()
+        self.mistakeLabel.setStyleSheet("QLabel {color: white}")
 
         # Var for number of mistakes that can be made
         self.mistakes = 3
@@ -170,15 +186,8 @@ class Game(QWidget):
         end = time.time()
         print("Time to generate board: " + str(end - start))
 
-        # Create Background
-        for i in range(0,9,3):
-            for j in range(0,9,3):
-                border = QFrame()
-                border.setLineWidth(2)
-                border.setFrameStyle(QFrame.Box)
-                self.layout.addWidget(border, i, j, 3, 3)
-
         # Create Buttons
+        self.buttons = [[0 for i in range(9)] for i in range(9)]
         for i in range(0, 9):
             for j in range(0, 9):
                 temp = QPushButton("")
@@ -186,9 +195,29 @@ class Game(QWidget):
                 temp.setFixedSize(50,50)
                 temp.clicked.connect(self.ButtonClick)
                 temp.installEventFilter(self)
-                self.layout.addWidget(temp, i, j)
+                self.layout.addWidget(temp, i, j, Qt.Alignment(Qt.AlignCenter))
+                temp.setStyleSheet("QPushButton {color: white; background-color: #017acc;}" "QPushButton:hover { background-color: #61c9fd }")
                 if self.gameBoard[i][j] != '.':
                     temp.setText(str(self.gameBoard[i][j]))
+
+                self.buttons[i][j] = temp
+
+        # Create Background Lines
+        # Place horizontal lines
+        for i in range(0, 10, 3):
+            border = QFrame()
+            border.setLineWidth(3)
+            border.setStyleSheet("QFrame {color: #3e3d41}")
+            border.setFrameStyle(QFrame.HLine)
+            self.layout.addWidget(border, i, 0, i, 9, Qt.Alignment(Qt.AlignTop))
+
+        # Place vertical lines
+        for i in range(0, 10, 3):
+            border = QFrame()
+            border.setLineWidth(4)
+            border.setStyleSheet("QFrame {color: #3e3d41}")
+            border.setFrameStyle(QFrame.VLine)
+            self.layout.addWidget(border, 0, i, 9, i, Qt.Alignment(Qt.AlignLeft))
 
         # Current Number Selected
         self.curNum = 1
@@ -209,7 +238,7 @@ class Game(QWidget):
             temp.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
             temp.setFixedSize(50,50)
             temp.clicked.connect(self.SetNum)
-            temp.setStyleSheet("QPushButton {background: white}")
+            temp.setStyleSheet("QPushButton {color: white; background-color: #017acc;}" "QPushButton:hover { background-color: #61c9fd }")
             self.numLayout.addWidget(temp, 0, i)
             self.selectorButtons.append(temp)
             # Check to disable any completed numbers
@@ -217,30 +246,42 @@ class Game(QWidget):
                 temp.setEnabled(False)
     
         # Set selector 1 to highlighted
-        self.selectorButtons[0].setStyleSheet("QPushButton {background: red}")
+        self.selectorButtons[0].setStyleSheet("QPushButton {color: white; background-color: #61c9fd;}" "QPushButton:hover { background-color: #61c9fd }")
         self.gameLayout.addLayout(self.numLayout)
 
-        # Create matrix for storing cell notes
+        # Create matrix for storing manual cell notes
         self.notes = [[[0 for i in range(9)] for j in range(9)] for k in range(9)]
 
-        pprint.pprint(self.gameBoard)
+        # Layout for solvers
+        self.solverLayout = QGridLayout()
+        self.solverLayout.setAlignment(Qt.AlignCenter)
+        self.solverLayout.setSpacing(2)
+        self.solverLayout.maximumSize().setHeight(size)
+        self.solverLayout.maximumSize().setWidth(size)
+        self.solverLayout.setSizeConstraint(QLayout.SetMaximumSize)
+        self.gameLayout.addLayout(self.solverLayout)
 
-        start = time.time()
-        self.noteSolve(self.gameBoard)
-        end = time.time()
-        print("Time for note solve: " + str(end - start))
-        pprint.pprint(self.gameBoard)
-        
+        # Create Buttons for algorithm solvers
+        self.recursiveButton = QPushButton("Recursive Solver")
+        self.solverLayout.addWidget(self.recursiveButton)
+        self.recursiveButton.clicked.connect(lambda: self.solveSudoku(self.gameBoard, True, True))
+        self.recursiveButton.setStyleSheet("QPushButton {color: white; background-color: #1e1e1e; border-style: outset; border-color: #3e3d41; border-width: 2px; border-radius: 10px; padding: 6px;}" "QPushButton:hover { background-color: #3e3d41 }")
+
+        self.noteButton = QPushButton("Note Solver")
+        self.solverLayout.addWidget(self.noteButton)
+        self.noteButton.clicked.connect(lambda: self.solveSudoku(self.gameBoard, True, False))
+        self.noteButton.setStyleSheet("QPushButton {color: white; background-color: #1e1e1e; border-style: outset; border-color: #3e3d41; border-width: 2px; border-radius: 10px; padding: 6px;}" "QPushButton:hover { background-color: #3e3d41 }")
+
     def SetNum(self):
         # Set previous button to not highlighted
-        self.selectorButtons[self.curNum - 1].setStyleSheet("QPushButton {background: white}")
+        self.selectorButtons[self.curNum - 1].setStyleSheet("QPushButton {color: white; background-color: #017acc;}" "QPushButton:hover { background-color: #61c9fd }")
         # Get button index
         button = self.sender()
         idx = self.numLayout.indexOf(button)
         location = self.numLayout.getItemPosition(idx)
         # Set number from number selector
         self.curNum = location[1] + 1
-        self.selectorButtons[self.curNum - 1].setStyleSheet("QPushButton {background: red}")
+        self.selectorButtons[self.curNum - 1].setStyleSheet("QPushButton {color: white; background-color: #61c9fd;}" "QPushButton:hover { background-color: #61c9fd }")
 
     def FillBoard(self):
         self.board = [[0 for i in range(9)] for j in range(9)]
@@ -313,7 +354,7 @@ class Game(QWidget):
                 self.gameBoard[i][j] = '.'
                 self.activeTiles[i][j] = 1
 
-            self.solveSudoku(self.gameBoard)
+            self.solveSudoku(self.gameBoard, False, True)
             if self.numSolutions != 1:
                 self.activeTiles = [[0 for i in range(9)] for j in range(9)]
                 self.numCount = [0 for i in range(9)]
@@ -334,7 +375,7 @@ class Game(QWidget):
             j = int(testIndex.split(',')[1])
             temp = self.gameBoard[i][j]
             self.gameBoard[i][j] = '.'
-            self.solveSudoku(self.gameBoard)
+            self.solveSudoku(self.gameBoard, False, True)
             if self.numSolutions != 1:
                 self.gameBoard[i][j] = self.board[i][j]
             elif self.numSolutions == 1:
@@ -373,23 +414,42 @@ class Game(QWidget):
 
         return sq
 
-    def solveSudoku(self, board: List[List[str]]) -> None:
-        # Lists for storing the contents of rows, columns, and squares
-        rowContains = [[0 for i in range(9)]for i in range(9)]
-        colContains = [[0 for i in range(9)]for i in range(9)]
-        sqsContains = [[0 for i in range(9)]for i in range(9)]
+    def solveSudoku(self, board: List[List[str]], visual: bool, recursive: bool) -> None:
+        if visual:
+            # If visual solve is used, disable all buttons
+            self.recursiveButton.setEnabled(False)
+            self.noteButton.setEnabled(False)
 
-        # Get values for each row, column, and square completion
-        for i in range(9):
-            for j in range(9):
-                if board[i][j] != '.':
-                    idx = int(board[i][j]) - 1
-                    rowContains[i][idx] = 1
-                    colContains[j][idx] = 1
-                    sqsContains[self.GetSquare(i,j)][idx] = 1
-        # Start recursive solve
-        self.numSolutions = 0
-        self.recursiveSolve(board, rowContains, colContains, sqsContains, 0, 0)
+            for i in range(9):
+                self.selectorButtons[i].setEnabled(False)
+                self.selectorButtons[i].setStyleSheet("QPushButton {color: white; background-color: #0008ff;}" "QPushButton:hover { background-color: #0008ff }")
+                for j in range(9):
+                    self.activeTiles[i][j] = 1
+                    self.buttons[i][j].setEnabled(False)
+        if recursive:
+            # Lists for storing the contents of rows, columns, and squares
+            rowContains = [[0 for i in range(9)]for i in range(9)]
+            colContains = [[0 for i in range(9)]for i in range(9)]
+            sqsContains = [[0 for i in range(9)]for i in range(9)]
+
+            # Get values for each row, column, and square completion
+            for i in range(9):
+                for j in range(9):
+                    if board[i][j] != '.':
+                        idx = int(board[i][j]) - 1
+                        rowContains[i][idx] = 1
+                        colContains[j][idx] = 1
+                        sqsContains[self.GetSquare(i,j)][idx] = 1
+        
+            # Start recursive solve
+            if visual:
+                self.visualSolve(board, rowContains, colContains, sqsContains, 0, 0)
+            else:
+                self.numSolutions = 0
+                self.recursiveSolve(board, rowContains, colContains, sqsContains, 0, 0)
+
+        else:
+            self.noteSolve(board)
 
     def recursiveSolve(self, board: List[List[str]], rC: List[List[int]], cC: List[List[int]], sC: List[List[int]], row: int, col: int) -> bool:
         # Base Case
@@ -423,10 +483,52 @@ class Game(QWidget):
         # No valid numbers
         return False
 
+    def visualSolve(self, board: List[List[str]], rC: List[List[int]], cC: List[List[int]], sC: List[List[int]], row: int, col: int) -> bool:
+        # Base Case
+        if(row == 9):
+            return True
+
+        while board[row][col] != '.':
+            row = self.rowCounter(row, col)
+            col = self.colCounter(col)
+            if(row == 9):
+                return True
+
+        for i in range(9):
+            # Update UI
+            self.buttons[row][col].setText(str(i + 1))
+            self.buttons[row][col].setStyleSheet("QPushButton {color: white; background-color: #567f4e;}")
+            QApplication.processEvents()
+            time.sleep(.1)
+
+            # If number is valid set it on the board
+            if rC[row][i] == 0 and cC[col][i] == 0 and sC[self.GetSquare(row,col)][i] == 0:
+                board[row][col] = i + 1
+                rC[row][i] = 1
+                cC[col][i] = 1
+                sC[self.GetSquare(row,col)][i] = 1
+
+                # If game is completed return true; otherwise reset and try another value
+                if(self.visualSolve(board, rC, cC, sC, self.rowCounter(row, col), self.colCounter(col))):
+                    return True
+                else:
+                    rC[row][i] = 0
+                    cC[col][i] = 0
+                    sC[self.GetSquare(row,col)][i] = 0
+
+        board[row][col] = '.'
+        # Update UI
+        self.buttons[row][col].setText("")
+        self.buttons[row][col].setStyleSheet("QPushButton {color: white; background-color: red;}")
+        QApplication.processEvents()
+        time.sleep(.1)
+
+        return False
+
     def noteSolve(self, board: List[List[str]]) -> None:
         # Solve sudoku puzzle that is assumed possible with one solution
         # Find all possible answers for each un-solved cell
-        # Determine if the is any cell that is definitely a number
+        # Determine if there is any cell that is definitely a number
         # eg. only spot for a 5 in a row, square, or column
         # Set that number and update effected notes. Then repeat until solved
 
@@ -478,9 +580,6 @@ class Game(QWidget):
         # Begin Solving
         while cellsLeft > 0:
             cellsOld = cellsLeft
-            pprint.pprint(self.gameBoard)
-            pprint.pprint(tilesToSolve)
-            #time.sleep(5)
             # Loop through board
             for i in range(9):
                 for j in range(9):
@@ -498,6 +597,9 @@ class Game(QWidget):
                             self.rowContains[i][num - 1] = 0
                             self.colContains[j][num - 1] = 0
                             self.sqContains[self.GetSquare(i,j)][num - 1] = 0
+
+                            # Set button text
+                            self.buttons[i][j].setText(str(num))
                       
             # When all single tiles are filled move to check 2
             if cellsLeft == cellsOld and cellsLeft > 0:
@@ -517,6 +619,9 @@ class Game(QWidget):
                                 self.colContains[j][num - 1] = 0
                                 self.sqContains[self.GetSquare(i,j)][num - 1] = 0
 
+                                # Set button text
+                                self.buttons[i][j].setText(str(num))
+
                                 break
 
                     elif self.colContains[i].count(1) > 0:
@@ -532,6 +637,9 @@ class Game(QWidget):
                                     self.rowContains[j][num - 1] = 0
                                     self.colContains[i][num - 1] = 0
                                     self.sqContains[self.GetSquare(j,i)][num - 1] = 0
+
+                                    # Set button text
+                                    self.buttons[j][i].setText(str(num))
 
                                     break
 
@@ -581,7 +689,16 @@ class Game(QWidget):
                                             self.colContains[y][num - 1] = 0
                                             self.sqContains[sq][num - 1] = 0
 
+                                            # Set button text
+                                            self.buttons[x][y].setText(str(num))
+
                                             break
+
+            # If there are no single tiles left move to recursive solve
+            if cellsLeft == cellsOld and cellsLeft > 0:
+                print("Moving to recursive!")
+                self.solveSudoku(board, True, True)
+                break
 
     def removeVal(self, i, j, sq, val, cellBoard: List[List[List[str]]]):
         # Remove from row and column
@@ -675,7 +792,7 @@ class Game(QWidget):
             
             # Set the button text
             button.setText(text)
-            button.setStyleSheet('QPushButton {color: blue;}')
+            button.setStyleSheet("QPushButton {color: white; background-color: #017acc;}" "QPushButton:hover { background-color: #61c9fd }")
 
     def ButtonClick(self):
          # Get button index
@@ -687,12 +804,12 @@ class Game(QWidget):
 
         if self.activeTiles[i][j] == 1:
             button.setText(str(self.curNum))
-            button.setStyleSheet('QPushButton {color: black;}')
+            button.setStyleSheet("QPushButton {color: white; background-color: #017acc;}" "QPushButton:hover { background-color: #61c9fd }")
 
             if self.curNum != self.board[i][j]:
                 self.mistakes -= 1
                 self.mistakeLabel.setText("Mistakes Left: " + str(self.mistakes))
-                button.setStyleSheet('QPushButton {color: red;}')
+                button.setStyleSheet("QPushButton {color: red; background-color: #017acc;}" "QPushButton:hover { background-color: #61c9fd }")
                 if self.mistakes <= 0:
                     self.GameOver()
             else:
@@ -700,13 +817,14 @@ class Game(QWidget):
                 # Disable the number if all are placed
                 self.numCount[self.curNum - 1] -= 1
                 if self.numCount[self.curNum - 1] == 0:
-                    self.selectorButtons[self.curNum - 1].setStyleSheet("QPushButton {background: lightgray}")
+                    self.selectorButtons[self.curNum - 1].setStyleSheet("QPushButton {color: white; background-color: #0008ff;}" "QPushButton:hover { background-color: #0008ff }")
                     self.selectorButtons[self.curNum - 1].setEnabled(False)
                     for i in range(9):
                         if self.numCount[i] != 0:
                             self.curNum = i + 1
-                            self.selectorButtons[self.curNum - 1].setStyleSheet("QPushButton {background: red}")
+                            self.selectorButtons[self.curNum - 1].setStyleSheet("QPushButton {color: white; background-color: #61c9fd;}" "QPushButton:hover { background-color: #61c9fd }")
                             break
+                        # If there are no numbers left the player wins
                         elif i == 8:
                             self.Victory()
 
