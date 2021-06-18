@@ -871,7 +871,12 @@ class Game(QWidget):
         msgBox = QMessageBox()
         msgBox.setText("You ran out of mistakes!")
         msgBox.setWindowTitle("Game Over")
+        msgBox.setWindowIcon(QIcon("Images/icon.png"))
         msgBox.setStandardButtons(QMessageBox.Retry)
+        msgBox.setStyleSheet("QMessageBox {background-color: #1e1e1e}"
+                             "QMessageBox QLabel {color: white}"
+                             "QMessageBox QPushButton {color: white; background-color: #1e1e1e; border-style: outset; border-color: #3e3d41; border-width: 2px; border-radius: 10px; padding: 10px;}"
+                             "QMessageBox QPushButton:hover { background-color: #3e3d41 }")
 
         if msgBox.exec() == QMessageBox.Retry:
             self.parent().parent().StartGame()
@@ -880,7 +885,12 @@ class Game(QWidget):
         msgBox = QMessageBox()
         msgBox.setText("You Win! You made "  + str(3 - self.mistakes) + " mistakes.")
         msgBox.setWindowTitle("Victory!")
+        msgBox.setWindowIcon(QIcon("Images/icon.png"))
         msgBox.setStandardButtons(QMessageBox.Ok)
+        msgBox.setStyleSheet("QMessageBox {background-color: #1e1e1e}"
+                             "QMessageBox QLabel {color: white}"
+                             "QMessageBox QPushButton {color: white; background-color: #1e1e1e; border-style: outset; border-color: #3e3d41; border-width: 2px; border-radius: 10px; padding: 10px;}"
+                             "QMessageBox QPushButton:hover { background-color: #3e3d41 }")
 
         if msgBox.exec() == QMessageBox.Ok:
             self.parent().parent().StartGame()
