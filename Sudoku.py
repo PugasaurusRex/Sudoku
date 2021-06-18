@@ -5,6 +5,7 @@ from PyQt5.QtWidgets import *
 from PyQt5.QtCore import *
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
+from PyQt5 import QtTest
 import math
 import random
 import pprint
@@ -266,11 +267,40 @@ class Game(QWidget):
         self.solverLayout.addWidget(self.recursiveButton)
         self.recursiveButton.clicked.connect(lambda: self.solveSudoku(self.gameBoard, True, True))
         self.recursiveButton.setStyleSheet("QPushButton {color: white; background-color: #1e1e1e; border-style: outset; border-color: #3e3d41; border-width: 2px; border-radius: 10px; padding: 6px;}" "QPushButton:hover { background-color: #3e3d41 }")
+        self.recursiveButton.setMaximumWidth(size)
 
         self.noteButton = QPushButton("Note Solver")
         self.solverLayout.addWidget(self.noteButton)
         self.noteButton.clicked.connect(lambda: self.solveSudoku(self.gameBoard, True, False))
         self.noteButton.setStyleSheet("QPushButton {color: white; background-color: #1e1e1e; border-style: outset; border-color: #3e3d41; border-width: 2px; border-radius: 10px; padding: 6px;}" "QPushButton:hover { background-color: #3e3d41 }")
+        self.noteButton.setMaximumWidth(size)
+
+        # Slider for changing time between algorithm iterations
+        self.iSlider = QSlider(Qt.Horizontal)
+        self.iSlider.setMinimum(0)
+        self.iSlider.setMaximum(3000)
+        self.iSlider.setValue(20)
+        self.iSlider.setSingleStep(10)
+        self.iSlider.valueChanged.connect(lambda: self.SetInterval(self.iSlider.value()))
+        self.iSlider.setMaximumWidth(size - 300)
+
+        # Label for slider
+        self.intervalLabel = QLabel()
+        self.intervalLabel.setText("Interval Between Iterations: 20 milliseconds")
+        self.intervalLabel.setStyleSheet("QLabel {color: white}")
+        self.intervalLabel.setAlignment(Qt.AlignCenter)
+
+        # Add label and slider to layout
+        self.solverLayout.addWidget(self.intervalLabel)
+        self.solverLayout.addWidget(self.iSlider)
+
+        # Variable for time between iterations
+        self.time = 20
+
+    def SetInterval(self, value):
+        # Change time from slider to seconds and store value
+        self.time = self.iSlider.value()
+        self.intervalLabel.setText("Interval Between Iterations: " + str(self.time) + " milliseconds")
 
     def SetNum(self):
         # Set previous button to not highlighted
@@ -484,46 +514,48 @@ class Game(QWidget):
         return False
 
     def visualSolve(self, board: List[List[str]], rC: List[List[int]], cC: List[List[int]], sC: List[List[int]], row: int, col: int) -> bool:
-        # Base Case
-        if(row == 9):
-            return True
-
-        while board[row][col] != '.':
-            row = self.rowCounter(row, col)
-            col = self.colCounter(col)
+        try:
+            # Base Case
             if(row == 9):
                 return True
 
-        for i in range(9):
-            # Update UI
-            self.buttons[row][col].setText(str(i + 1))
-            self.buttons[row][col].setStyleSheet("QPushButton {color: white; background-color: #567f4e;}")
-            QApplication.processEvents()
-            time.sleep(.1)
-
-            # If number is valid set it on the board
-            if rC[row][i] == 0 and cC[col][i] == 0 and sC[self.GetSquare(row,col)][i] == 0:
-                board[row][col] = i + 1
-                rC[row][i] = 1
-                cC[col][i] = 1
-                sC[self.GetSquare(row,col)][i] = 1
-
-                # If game is completed return true; otherwise reset and try another value
-                if(self.visualSolve(board, rC, cC, sC, self.rowCounter(row, col), self.colCounter(col))):
+            while board[row][col] != '.':
+                row = self.rowCounter(row, col)
+                col = self.colCounter(col)
+                if(row == 9):
                     return True
-                else:
-                    rC[row][i] = 0
-                    cC[col][i] = 0
-                    sC[self.GetSquare(row,col)][i] = 0
 
-        board[row][col] = '.'
-        # Update UI
-        self.buttons[row][col].setText("")
-        self.buttons[row][col].setStyleSheet("QPushButton {color: white; background-color: red;}")
-        QApplication.processEvents()
-        time.sleep(.1)
+            for i in range(9):
+                # Update UI
+                self.buttons[row][col].setText(str(i + 1))
+                self.buttons[row][col].setStyleSheet("QPushButton {color: white; background-color: #567f4e;}")
+                QtTest.QTest.qWait(self.time)
 
-        return False
+                # If number is valid set it on the board
+                if rC[row][i] == 0 and cC[col][i] == 0 and sC[self.GetSquare(row,col)][i] == 0:
+                    board[row][col] = i + 1
+                    rC[row][i] = 1
+                    cC[col][i] = 1
+                    sC[self.GetSquare(row,col)][i] = 1
+
+                    # If game is completed return true; otherwise reset and try another value
+                    if(self.visualSolve(board, rC, cC, sC, self.rowCounter(row, col), self.colCounter(col))):
+                        return True
+                    else:
+                        rC[row][i] = 0
+                        cC[col][i] = 0
+                        sC[self.GetSquare(row,col)][i] = 0
+
+            board[row][col] = '.'
+            # Update UI
+            self.buttons[row][col].setText("")
+            self.buttons[row][col].setStyleSheet("QPushButton {color: white; background-color: red;}")
+            QtTest.QTest.qWait(self.time)
+
+            return False
+        
+        except:
+            print("Forcefully stopping solver due to restart or board wipe.")
 
     def noteSolve(self, board: List[List[str]]) -> None:
         # Solve sudoku puzzle that is assumed possible with one solution
@@ -532,88 +564,68 @@ class Game(QWidget):
         # eg. only spot for a 5 in a row, square, or column
         # Set that number and update effected notes. Then repeat until solved
 
-        # Lists for storing the contents of rows, columns, and squares
-        self.rowContains = [[]for i in range(9)]
-        self.colContains = [[]for i in range(9)]
-        self.sqContains = [[]for i in range(9)]
+        try:
+            # Lists for storing the contents of rows, columns, and squares
+            self.rowContains = [[]for i in range(9)]
+            self.colContains = [[]for i in range(9)]
+            self.sqContains = [[]for i in range(9)]
 
-        # List for storing the possible values of each cell
-        tilesToSolve = [[[] for i in range(9)] for i in range(9)]
+            # List for storing the possible values of each cell
+            tilesToSolve = [[[] for i in range(9)] for i in range(9)]
 
-        # Counter to determine how many cells are left to solve
-        cellsLeft = 0
+            # Counter to determine how many cells are left to solve
+            cellsLeft = 0
 
-        # Get values for each row, column, and square completion
-        for i in range(9):
-            for j in range(9):
-                if board[i][j] != '.':
-                    idx = int(board[i][j])
-                    self.rowContains[i].append(idx)
-                    self.colContains[j].append(idx)
-                    self.sqContains[self.GetSquare(i,j)].append(idx)
-
-        # Set all possible numbers to list for each unsolved cells
-        for i in range(9):
-            for j in range(9):
-                if board[i][j] == '.':
-                    cellsLeft += 1
-                    for k in range(9):
-                        x = k + 1
-                        if x not in self.rowContains[i] and x not in self.colContains[j] and x not in self.sqContains[self.GetSquare(i,j)]:
-                            tilesToSolve[i][j].append(x)
-
-        # Repurpose col, row, and sq used to count number of possible tiles
-        self.rowContains = [[0 for i in range(9)]for i in range(9)]
-        self.colContains = [[0 for i in range(9)]for i in range(9)]
-        self.sqContains = [[0 for i in range(9)]for i in range(9)]
-
-        # Count the amount of each number per region
-        for i in range(9):
-            for j in range(9):
-                if board[i][j] == '.':
-                    for num in range(len(tilesToSolve[i][j])):
-                                idx = tilesToSolve[i][j][num] - 1
-                                self.rowContains[i][idx] += 1
-                                self.colContains[j][idx] += 1
-                                self.sqContains[self.GetSquare(i,j)][idx] += 1
-
-        # Begin Solving
-        while cellsLeft > 0:
-            cellsOld = cellsLeft
-            # Loop through board
+            # Get values for each row, column, and square completion
             for i in range(9):
                 for j in range(9):
-                    # Only stop at un-solved cells
+                    if board[i][j] != '.':
+                        idx = int(board[i][j])
+                        self.rowContains[i].append(idx)
+                        self.colContains[j].append(idx)
+                        self.sqContains[self.GetSquare(i,j)].append(idx)
+
+            # Set all possible numbers to list for each unsolved cells
+            for i in range(9):
+                for j in range(9):
                     if board[i][j] == '.':
-                        # Check 1: Only one possible number for cell
-                        if len(tilesToSolve[i][j]) == 1:
-                            num = tilesToSolve[i][j][0]
-                            board[i][j] = num
-                            tilesToSolve[i][j] = []
-                            cellsLeft -= 1
-                            # Remove number from row, col, and square
-                            tilesToSolve = self.removeVal(i, j, self.GetSquare(i,j), int(board[i][j]), tilesToSolve)
+                        cellsLeft += 1
+                        for k in range(9):
+                            x = k + 1
+                            if x not in self.rowContains[i] and x not in self.colContains[j] and x not in self.sqContains[self.GetSquare(i,j)]:
+                                tilesToSolve[i][j].append(x)
 
-                            self.rowContains[i][num - 1] = 0
-                            self.colContains[j][num - 1] = 0
-                            self.sqContains[self.GetSquare(i,j)][num - 1] = 0
+            # Repurpose col, row, and sq used to count number of possible tiles
+            self.rowContains = [[0 for i in range(9)]for i in range(9)]
+            self.colContains = [[0 for i in range(9)]for i in range(9)]
+            self.sqContains = [[0 for i in range(9)]for i in range(9)]
 
-                            # Set button text
-                            self.buttons[i][j].setText(str(num))
-                      
-            # When all single tiles are filled move to check 2
-            if cellsLeft == cellsOld and cellsLeft > 0:
-                # Check 2: Check each tile in cell to see if it is only one in row, col, or square
+            # Count the amount of each number per region
+            for i in range(9):
+                for j in range(9):
+                    if board[i][j] == '.':
+                        for num in range(len(tilesToSolve[i][j])):
+                                    idx = tilesToSolve[i][j][num] - 1
+                                    self.rowContains[i][idx] += 1
+                                    self.colContains[j][idx] += 1
+                                    self.sqContains[self.GetSquare(i,j)][idx] += 1
+
+            # Begin Solving
+            while cellsLeft > 0:
+                cellsOld = cellsLeft
+                # Loop through board
                 for i in range(9):
-                    if self.rowContains[i].count(1) > 0:
-                        num = self.rowContains[i].index(1) + 1
-                        for j in range(9):
-                            if board[i][j] == '.' and num in tilesToSolve[i][j]:
+                    for j in range(9):
+                        # Only stop at un-solved cells
+                        if board[i][j] == '.':
+                            # Check 1: Only one possible number for cell
+                            if len(tilesToSolve[i][j]) == 1:
+                                num = tilesToSolve[i][j][0]
                                 board[i][j] = num
                                 tilesToSolve[i][j] = []
                                 cellsLeft -= 1
                                 # Remove number from row, col, and square
-                                tilesToSolve = self.removeVal(i, j, self.GetSquare(i,j), int(num), tilesToSolve)
+                                tilesToSolve = self.removeVal(i, j, self.GetSquare(i,j), int(board[i][j]), tilesToSolve)
 
                                 self.rowContains[i][num - 1] = 0
                                 self.colContains[j][num - 1] = 0
@@ -621,131 +633,158 @@ class Game(QWidget):
 
                                 # Set button text
                                 self.buttons[i][j].setText(str(num))
-
-                                break
-
-                    elif self.colContains[i].count(1) > 0:
-                            num = self.colContains[i].index(1) + 1
+                      
+                # When all single tiles are filled move to check 2
+                if cellsLeft == cellsOld and cellsLeft > 0:
+                    # Check 2: Check each tile in cell to see if it is only one in row, col, or square
+                    for i in range(9):
+                        if self.rowContains[i].count(1) > 0:
+                            num = self.rowContains[i].index(1) + 1
                             for j in range(9):
-                                if board[j][i] == '.' and num in tilesToSolve[j][i]:
-                                    board[j][i] = num
-                                    tilesToSolve[j][i] = []
+                                if board[i][j] == '.' and num in tilesToSolve[i][j]:
+                                    board[i][j] = num
+                                    tilesToSolve[i][j] = []
                                     cellsLeft -= 1
                                     # Remove number from row, col, and square
-                                    tilesToSolve = self.removeVal(j, i, self.GetSquare(j,i), int(num), tilesToSolve)
+                                    tilesToSolve = self.removeVal(i, j, self.GetSquare(i,j), int(num), tilesToSolve)
 
-                                    self.rowContains[j][num - 1] = 0
-                                    self.colContains[i][num - 1] = 0
-                                    self.sqContains[self.GetSquare(j,i)][num - 1] = 0
+                                    self.rowContains[i][num - 1] = 0
+                                    self.colContains[j][num - 1] = 0
+                                    self.sqContains[self.GetSquare(i,j)][num - 1] = 0
 
                                     # Set button text
-                                    self.buttons[j][i].setText(str(num))
+                                    self.buttons[i][j].setText(str(num))
 
                                     break
 
-                    elif self.sqContains[i].count(1) > 0:
-                            num = self.sqContains[i].index(1) + 1
+                        elif self.colContains[i].count(1) > 0:
+                                num = self.colContains[i].index(1) + 1
+                                for j in range(9):
+                                    if board[j][i] == '.' and num in tilesToSolve[j][i]:
+                                        board[j][i] = num
+                                        tilesToSolve[j][i] = []
+                                        cellsLeft -= 1
+                                        # Remove number from row, col, and square
+                                        tilesToSolve = self.removeVal(j, i, self.GetSquare(j,i), int(num), tilesToSolve)
 
-                            sq = i
-                            if sq == 0:
-                              starti = 0
-                              startj = 0
-                            elif sq == 1:
-                              starti = 0
-                              startj = 3
-                            elif sq == 2:
-                              starti = 0
-                              startj = 6
-                            elif sq == 3:
-                              starti = 3
-                              startj = 0
-                            elif sq == 4:
-                              starti = 3
-                              startj = 3
-                            elif sq == 5:
-                              starti = 3
-                              startj = 6
-                            elif sq == 6:
-                              starti = 6
-                              startj = 0
-                            elif sq == 7:
-                              starti = 6
-                              startj = 3
-                            elif sq == 8:
-                              starti = 6
-                              startj = 6
+                                        self.rowContains[j][num - 1] = 0
+                                        self.colContains[i][num - 1] = 0
+                                        self.sqContains[self.GetSquare(j,i)][num - 1] = 0
 
-                            for x in range(starti, starti + 3):
-                                    for y in range(startj, startj + 3):
-                                        if board[x][y] == '.' and num in tilesToSolve[x][y]:
+                                        # Set button text
+                                        self.buttons[j][i].setText(str(num))
+
+                                        break
+
+                        elif self.sqContains[i].count(1) > 0:
+                                num = self.sqContains[i].index(1) + 1
+
+                                sq = i
+                                if sq == 0:
+                                  starti = 0
+                                  startj = 0
+                                elif sq == 1:
+                                  starti = 0
+                                  startj = 3
+                                elif sq == 2:
+                                  starti = 0
+                                  startj = 6
+                                elif sq == 3:
+                                  starti = 3
+                                  startj = 0
+                                elif sq == 4:
+                                  starti = 3
+                                  startj = 3
+                                elif sq == 5:
+                                  starti = 3
+                                  startj = 6
+                                elif sq == 6:
+                                  starti = 6
+                                  startj = 0
+                                elif sq == 7:
+                                  starti = 6
+                                  startj = 3
+                                elif sq == 8:
+                                  starti = 6
+                                  startj = 6
+
+                                for x in range(starti, starti + 3):
+                                        for y in range(startj, startj + 3):
+                                            if board[x][y] == '.' and num in tilesToSolve[x][y]:
                                 
-                                            board[x][y] = num
-                                            tilesToSolve[x][y] = []
-                                            cellsLeft -= 1
-                                            # Remove number from row, col, and square
-                                            tilesToSolve = self.removeVal(x, y, sq, int(num), tilesToSolve)
+                                                board[x][y] = num
+                                                tilesToSolve[x][y] = []
+                                                cellsLeft -= 1
+                                                # Remove number from row, col, and square
+                                                tilesToSolve = self.removeVal(x, y, sq, int(num), tilesToSolve)
 
-                                            self.rowContains[x][num - 1] = 0
-                                            self.colContains[y][num - 1] = 0
-                                            self.sqContains[sq][num - 1] = 0
+                                                self.rowContains[x][num - 1] = 0
+                                                self.colContains[y][num - 1] = 0
+                                                self.sqContains[sq][num - 1] = 0
 
-                                            # Set button text
-                                            self.buttons[x][y].setText(str(num))
+                                                # Set button text
+                                                self.buttons[x][y].setText(str(num))
 
-                                            break
+                                                break
 
-            # If there are no single tiles left move to recursive solve
-            if cellsLeft == cellsOld and cellsLeft > 0:
-                print("Moving to recursive!")
-                self.solveSudoku(board, True, True)
-                break
+                # If there are no single tiles left move to recursive solve
+                if cellsLeft == cellsOld and cellsLeft > 0:
+                    print("Moving to recursive!")
+                    self.solveSudoku(board, True, True)
+                    break
+
+        except:
+            print("Forcefully stopping solver due to reset or board wipe.")
 
     def removeVal(self, i, j, sq, val, cellBoard: List[List[List[str]]]):
-        # Remove from row and column
-        for a in range(9):
-            if val in cellBoard[i][a]:
-                cellBoard[i][a].remove(val)
-                self.rowContains[i][val-1] -= 1
-            if val in cellBoard[a][j]:
-                cellBoard[a][j].remove(val)
-                self.colContains[j][val-1] -= 1
+        try:
+            # Remove from row and column
+            for a in range(9):
+                if val in cellBoard[i][a]:
+                    cellBoard[i][a].remove(val)
+                    self.rowContains[i][val-1] -= 1
+                if val in cellBoard[a][j]:
+                    cellBoard[a][j].remove(val)
+                    self.colContains[j][val-1] -= 1
 
-        # Remove from square
-        if sq == 0:
-          starti = 0
-          startj = 0
-        elif sq == 1:
-          starti = 0
-          startj = 3
-        elif sq == 2:
-          starti = 0
-          startj = 6
-        elif sq == 3:
-          starti = 3
-          startj = 0
-        elif sq == 4:
-          starti = 3
-          startj = 3
-        elif sq == 5:
-          starti = 3
-          startj = 6
-        elif sq == 6:
-          starti = 6
-          startj = 0
-        elif sq == 7:
-          starti = 6
-          startj = 3
-        elif sq == 8:
-          starti = 6
-          startj = 6
+            # Remove from square
+            if sq == 0:
+              starti = 0
+              startj = 0
+            elif sq == 1:
+              starti = 0
+              startj = 3
+            elif sq == 2:
+              starti = 0
+              startj = 6
+            elif sq == 3:
+              starti = 3
+              startj = 0
+            elif sq == 4:
+              starti = 3
+              startj = 3
+            elif sq == 5:
+              starti = 3
+              startj = 6
+            elif sq == 6:
+              starti = 6
+              startj = 0
+            elif sq == 7:
+              starti = 6
+              startj = 3
+            elif sq == 8:
+              starti = 6
+              startj = 6
 
-        for x in range(starti, starti + 3):
-                for y in range(startj, startj + 3):
-                    if val in cellBoard[x][y]:
-                        cellBoard[x][y].remove(val)
-                        self.sqContains[sq][val-1] -= 1
+            for x in range(starti, starti + 3):
+                    for y in range(startj, startj + 3):
+                        if val in cellBoard[x][y]:
+                            cellBoard[x][y].remove(val)
+                            self.sqContains[sq][val-1] -= 1
 
-        return cellBoard
+            return cellBoard
+        except:
+            print("Could not find board or necessary matrix.")
 
     def rowCounter(self, row, col):
         if (col + 1) % 9 == 0:
