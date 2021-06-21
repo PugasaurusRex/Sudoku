@@ -324,7 +324,9 @@ class Game(QWidget):
         iterations = 0
 
         for i in range(9):
+            # Value for checking infinite loops
             x = -1
+            # j counter
             j = 0
             while j < 9:
                 while True:
@@ -335,6 +337,7 @@ class Game(QWidget):
                         return
 
                     lastX = x
+
                     # Get random value from row
                     x = random.choice(rows[i])
                     sq = self.GetSquare(i,j)
@@ -366,6 +369,7 @@ class Game(QWidget):
 
         self.numLeft = numRemove
 
+        # Create new gameboard from already solved board
         self.numSolutions = 0
         testSpots = []
         for x in range(9):
@@ -373,8 +377,9 @@ class Game(QWidget):
                     self.gameBoard[x][y] = self.board[x][y]
                     testSpots.append(str(x) + "," + str(y))
 
-        # Remove first 40 squares before checking uniqueness
+        # Remove first 40 tiles before checking uniqueness
         while True:
+            # Remove 40 tiles
             for num in range(40):
                 testIndex = random.choice(testSpots)
                 testSpots.remove(testIndex)
@@ -384,7 +389,10 @@ class Game(QWidget):
                 self.gameBoard[i][j] = '.'
                 self.activeTiles[i][j] = 1
 
+            # Check uniqueness with recursion
             self.solveSudoku(self.gameBoard, False, True)
+
+            # If not unique reset gameboard and try again
             if self.numSolutions != 1:
                 self.activeTiles = [[0 for i in range(9)] for j in range(9)]
                 self.numCount = [0 for i in range(9)]
@@ -414,7 +422,7 @@ class Game(QWidget):
 
     def GetSquare(self, x, y):
         sq = -1
-
+        # Return the square based on the given indices
         if(x < 3 and y < 3):
             sq = 0
 
@@ -456,6 +464,7 @@ class Game(QWidget):
                 for j in range(9):
                     self.activeTiles[i][j] = 1
                     self.buttons[i][j].setEnabled(False)
+
         if recursive:
             # Lists for storing the contents of rows, columns, and squares
             rowContains = [[0 for i in range(9)]for i in range(9)]
@@ -489,6 +498,7 @@ class Game(QWidget):
             self.numSolutions += 1
             return False
 
+        # Loop until next unsolved tile
         while board[row][col] != '.':
             row = self.rowCounter(row, col)
             col = self.colCounter(col)
@@ -496,6 +506,7 @@ class Game(QWidget):
                 self.numSolutions += 1
                 return False
 
+        # When unsolved tile is found loop through 1 to 9
         for i in range(9):
             # If number is valid set it on the board
             if rC[row][i] == 0 and cC[col][i] == 0 and sC[self.GetSquare(row,col)][i] == 0:
@@ -510,7 +521,7 @@ class Game(QWidget):
                     rC[row][i] = 0
                     cC[col][i] = 0
                     sC[self.GetSquare(row,col)][i] = 0
-        # No valid numbers
+        # No valid numbers, return false for backtracking
         return False
 
     def visualSolve(self, board: List[List[str]], rC: List[List[int]], cC: List[List[int]], sC: List[List[int]], row: int, col: int) -> bool:
@@ -519,12 +530,14 @@ class Game(QWidget):
             if(row == 9):
                 return True
 
+            # Loop until next unsolved tile
             while board[row][col] != '.':
                 row = self.rowCounter(row, col)
                 col = self.colCounter(col)
                 if(row == 9):
                     return True
 
+            # When unsolved tile is found loop through 1 to 9
             for i in range(9):
                 # Update UI
                 self.buttons[row][col].setText(str(i + 1))
@@ -545,7 +558,7 @@ class Game(QWidget):
                         rC[row][i] = 0
                         cC[col][i] = 0
                         sC[self.GetSquare(row,col)][i] = 0
-
+            # If looped through all values and no valid one found return false for backtracking
             board[row][col] = '.'
             # Update UI
             self.buttons[row][col].setText("")
@@ -636,10 +649,13 @@ class Game(QWidget):
                       
                 # When all single tiles are filled move to check 2
                 if cellsLeft == cellsOld and cellsLeft > 0:
-                    # Check 2: Check each tile in cell to see if it is only one in row, col, or square
+                    # Check 2: Check each row, col, or square to see if it has a tile with only one answer
                     for i in range(9):
+                        # Check row i
                         if self.rowContains[i].count(1) > 0:
+                            # Get number from index
                             num = self.rowContains[i].index(1) + 1
+                            # Find tile in row that has the number and set it
                             for j in range(9):
                                 if board[i][j] == '.' and num in tilesToSolve[i][j]:
                                     board[i][j] = num
@@ -648,6 +664,7 @@ class Game(QWidget):
                                     # Remove number from row, col, and square
                                     tilesToSolve = self.removeVal(i, j, self.GetSquare(i,j), int(num), tilesToSolve)
 
+                                    # Remove number from possible values in its region
                                     self.rowContains[i][num - 1] = 0
                                     self.colContains[j][num - 1] = 0
                                     self.sqContains[self.GetSquare(i,j)][num - 1] = 0
@@ -657,8 +674,11 @@ class Game(QWidget):
 
                                     break
 
+                        # If none in row check col i
                         elif self.colContains[i].count(1) > 0:
+                                # Find number from index
                                 num = self.colContains[i].index(1) + 1
+                                # Find tile in column that has the number and set it
                                 for j in range(9):
                                     if board[j][i] == '.' and num in tilesToSolve[j][i]:
                                         board[j][i] = num
@@ -667,6 +687,7 @@ class Game(QWidget):
                                         # Remove number from row, col, and square
                                         tilesToSolve = self.removeVal(j, i, self.GetSquare(j,i), int(num), tilesToSolve)
 
+                                        # Remove number from possible values in its region
                                         self.rowContains[j][num - 1] = 0
                                         self.colContains[i][num - 1] = 0
                                         self.sqContains[self.GetSquare(j,i)][num - 1] = 0
@@ -675,10 +696,13 @@ class Game(QWidget):
                                         self.buttons[j][i].setText(str(num))
 
                                         break
-
+                        
+                        # If no tiles in row or col check square i
                         elif self.sqContains[i].count(1) > 0:
+                                # Get number from index
                                 num = self.sqContains[i].index(1) + 1
 
+                                # Get start indices of square i
                                 sq = i
                                 if sq == 0:
                                   starti = 0
@@ -708,6 +732,7 @@ class Game(QWidget):
                                   starti = 6
                                   startj = 6
 
+                                # From start indices loop through square and find tile with number and set it
                                 for x in range(starti, starti + 3):
                                         for y in range(startj, startj + 3):
                                             if board[x][y] == '.' and num in tilesToSolve[x][y]:
@@ -718,6 +743,7 @@ class Game(QWidget):
                                                 # Remove number from row, col, and square
                                                 tilesToSolve = self.removeVal(x, y, sq, int(num), tilesToSolve)
 
+                                                # Remove number from possible values in its region
                                                 self.rowContains[x][num - 1] = 0
                                                 self.colContains[y][num - 1] = 0
                                                 self.sqContains[sq][num - 1] = 0
@@ -728,6 +754,8 @@ class Game(QWidget):
                                                 break
 
                 # If there are no single tiles left move to recursive solve
+                # Could expand algorithm to check for tiles that are identical but recursion is most likely faster
+                # e.g. a row has two tiles with (7,2) it can be assumed that all other tiles in row are not 7 or 2
                 if cellsLeft == cellsOld and cellsLeft > 0:
                     print("Moving to recursive!")
                     self.solveSudoku(board, True, True)
@@ -796,6 +824,7 @@ class Game(QWidget):
         return (col + 1) % 9
 
     def eventFilter(self, obj, event):
+        # If user right clicks call the right click custom function
         if event.type() == QEvent.MouseButtonPress:
             if event.button() == Qt.RightButton:
                 self.RightButton(obj)
@@ -841,23 +870,29 @@ class Game(QWidget):
         i = location[0]
         j = location[1]
 
+        # If tile is not solved set to current number
         if self.activeTiles[i][j] == 1:
             button.setText(str(self.curNum))
             button.setStyleSheet("QPushButton {color: white; background-color: #017acc;}" "QPushButton:hover { background-color: #61c9fd }")
 
+            # If current number is not correct decrease mistake counter and check for game over
             if self.curNum != self.board[i][j]:
                 self.mistakes -= 1
                 self.mistakeLabel.setText("Mistakes Left: " + str(self.mistakes))
                 button.setStyleSheet("QPushButton {color: red; background-color: #017acc;}" "QPushButton:hover { background-color: #61c9fd }")
                 if self.mistakes <= 0:
                     self.GameOver()
+            # If current number is correct decrease numbers left and check victory
             else:
                 self.activeTiles[i][j] = 0
                 # Disable the number if all are placed
                 self.numCount[self.curNum - 1] -= 1
+                # If there are none of current number left disable the selector button for number
                 if self.numCount[self.curNum - 1] == 0:
                     self.selectorButtons[self.curNum - 1].setStyleSheet("QPushButton {color: white; background-color: #0008ff;}" "QPushButton:hover { background-color: #0008ff }")
                     self.selectorButtons[self.curNum - 1].setEnabled(False)
+                    # Loop through numbers and set selector for current number to first available value
+                    # If no values are left the player has won, call victory function
                     for i in range(9):
                         if self.numCount[i] != 0:
                             self.curNum = i + 1
