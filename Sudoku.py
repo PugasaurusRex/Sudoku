@@ -608,6 +608,13 @@ class Game(QWidget):
                             if x not in self.rowContains[i] and x not in self.colContains[j] and x not in self.sqContains[self.GetSquare(i,j)]:
                                 tilesToSolve[i][j].append(x)
 
+                                # Visual: Set current number and call right click for button
+                                self.curNum = x
+                                self.RightButton(self.buttons[i][j])
+                                # Update UI
+                                self.buttons[i][j].setStyleSheet("QPushButton {color: white; background-color: #567f4e;}")
+                                QtTest.QTest.qWait(self.time)
+
             # Repurpose col, row, and sq used to count number of possible tiles
             self.rowContains = [[0 for i in range(9)]for i in range(9)]
             self.colContains = [[0 for i in range(9)]for i in range(9)]
@@ -632,13 +639,12 @@ class Game(QWidget):
                         # Only stop at un-solved cells
                         if board[i][j] == '.':
                             # Check 1: Only one possible number for cell
+                            self.buttons[i][j].setStyleSheet("QPushButton {color: white; background-color: lightgreen;}")
                             if len(tilesToSolve[i][j]) == 1:
                                 num = tilesToSolve[i][j][0]
                                 board[i][j] = num
                                 tilesToSolve[i][j] = []
                                 cellsLeft -= 1
-                                # Remove number from row, col, and square
-                                tilesToSolve = self.removeVal(i, j, self.GetSquare(i,j), int(board[i][j]), tilesToSolve)
 
                                 self.rowContains[i][num - 1] = 0
                                 self.colContains[j][num - 1] = 0
@@ -646,6 +652,17 @@ class Game(QWidget):
 
                                 # Set button text
                                 self.buttons[i][j].setText(str(num))
+
+                                # Remove number from row, col, and square
+                                tilesToSolve = self.removeVal(i, j, self.GetSquare(i,j), int(board[i][j]), tilesToSolve)
+
+                            # Update UI
+                            QtTest.QTest.qWait(self.time)
+                            # If solved set to blue
+                            if tilesToSolve[i][j] == []:
+                                self.buttons[i][j].setStyleSheet("QPushButton {color: white; background-color: #017acc;}")
+                            else:
+                                self.buttons[i][j].setStyleSheet("QPushButton {color: white; background-color: #567f4e;}")
                       
                 # When all single tiles are filled move to check 2
                 if cellsLeft == cellsOld and cellsLeft > 0:
@@ -657,12 +674,11 @@ class Game(QWidget):
                             num = self.rowContains[i].index(1) + 1
                             # Find tile in row that has the number and set it
                             for j in range(9):
+                                self.buttons[i][j].setStyleSheet("QPushButton {color: white; background-color: lightgreen;}")
                                 if board[i][j] == '.' and num in tilesToSolve[i][j]:
                                     board[i][j] = num
                                     tilesToSolve[i][j] = []
                                     cellsLeft -= 1
-                                    # Remove number from row, col, and square
-                                    tilesToSolve = self.removeVal(i, j, self.GetSquare(i,j), int(num), tilesToSolve)
 
                                     # Remove number from possible values in its region
                                     self.rowContains[i][num - 1] = 0
@@ -672,7 +688,26 @@ class Game(QWidget):
                                     # Set button text
                                     self.buttons[i][j].setText(str(num))
 
+                                    # Remove number from row, col, and square
+                                    tilesToSolve = self.removeVal(i, j, self.GetSquare(i,j), int(num), tilesToSolve)
+
+                                    # Update UI
+                                    QtTest.QTest.qWait(self.time)
+                                    # If solved set to blue
+                                    if tilesToSolve[i][j] == []:
+                                        self.buttons[i][j].setStyleSheet("QPushButton {color: white; background-color: #017acc;}")
+                                    else:
+                                        self.buttons[i][j].setStyleSheet("QPushButton {color: white; background-color: #567f4e;}")
+
                                     break
+
+                                # Update UI
+                                QtTest.QTest.qWait(self.time)
+                                # If solved set to blue
+                                if tilesToSolve[i][j] == []:
+                                    self.buttons[i][j].setStyleSheet("QPushButton {color: white; background-color: #017acc;}")
+                                else:
+                                    self.buttons[i][j].setStyleSheet("QPushButton {color: white; background-color: #567f4e;}")
 
                         # If none in row check col i
                         elif self.colContains[i].count(1) > 0:
@@ -680,12 +715,11 @@ class Game(QWidget):
                                 num = self.colContains[i].index(1) + 1
                                 # Find tile in column that has the number and set it
                                 for j in range(9):
+                                    self.buttons[j][i].setStyleSheet("QPushButton {color: white; background-color: lightgreen;}")
                                     if board[j][i] == '.' and num in tilesToSolve[j][i]:
                                         board[j][i] = num
                                         tilesToSolve[j][i] = []
                                         cellsLeft -= 1
-                                        # Remove number from row, col, and square
-                                        tilesToSolve = self.removeVal(j, i, self.GetSquare(j,i), int(num), tilesToSolve)
 
                                         # Remove number from possible values in its region
                                         self.rowContains[j][num - 1] = 0
@@ -695,7 +729,26 @@ class Game(QWidget):
                                         # Set button text
                                         self.buttons[j][i].setText(str(num))
 
+                                        # Remove number from row, col, and square
+                                        tilesToSolve = self.removeVal(j, i, self.GetSquare(j,i), int(num), tilesToSolve)
+
+                                        # Update UI
+                                        QtTest.QTest.qWait(self.time)
+                                        # If solved set to blue
+                                        if tilesToSolve[j][i] == []:
+                                            self.buttons[j][i].setStyleSheet("QPushButton {color: white; background-color: #017acc;}")
+                                        else:
+                                            self.buttons[j][i].setStyleSheet("QPushButton {color: white; background-color: #567f4e;}")
+
                                         break
+
+                                    # Update UI
+                                    QtTest.QTest.qWait(self.time)
+                                    # If solved set to blue
+                                    if tilesToSolve[j][i] == []:
+                                        self.buttons[j][i].setStyleSheet("QPushButton {color: white; background-color: #017acc;}")
+                                    else:
+                                        self.buttons[j][i].setStyleSheet("QPushButton {color: white; background-color: #567f4e;}")
                         
                         # If no tiles in row or col check square i
                         elif self.sqContains[i].count(1) > 0:
@@ -735,13 +788,12 @@ class Game(QWidget):
                                 # From start indices loop through square and find tile with number and set it
                                 for x in range(starti, starti + 3):
                                         for y in range(startj, startj + 3):
+                                            self.buttons[x][y].setStyleSheet("QPushButton {color: white; background-color: lightgreen;}")
                                             if board[x][y] == '.' and num in tilesToSolve[x][y]:
                                 
                                                 board[x][y] = num
                                                 tilesToSolve[x][y] = []
                                                 cellsLeft -= 1
-                                                # Remove number from row, col, and square
-                                                tilesToSolve = self.removeVal(x, y, sq, int(num), tilesToSolve)
 
                                                 # Remove number from possible values in its region
                                                 self.rowContains[x][num - 1] = 0
@@ -751,7 +803,26 @@ class Game(QWidget):
                                                 # Set button text
                                                 self.buttons[x][y].setText(str(num))
 
+                                                # Remove number from row, col, and square
+                                                tilesToSolve = self.removeVal(x, y, sq, int(num), tilesToSolve)
+
+                                                # Update UI
+                                                QtTest.QTest.qWait(self.time)
+                                                # If solved set to blue
+                                                if tilesToSolve[x][y] == []:
+                                                    self.buttons[x][y].setStyleSheet("QPushButton {color: white; background-color: #017acc;}")
+                                                else:
+                                                    self.buttons[x][y].setStyleSheet("QPushButton {color: white; background-color: #567f4e;}")
+
                                                 break
+
+                                            # Update UI
+                                            QtTest.QTest.qWait(self.time)
+                                            # If solved set to blue
+                                            if tilesToSolve[x][y] == []:
+                                                self.buttons[x][y].setStyleSheet("QPushButton {color: white; background-color: #017acc;}")
+                                            else:
+                                                self.buttons[x][y].setStyleSheet("QPushButton {color: white; background-color: #567f4e;}")
 
                 # If there are no single tiles left move to recursive solve
                 # Could expand algorithm to check for tiles that are identical but recursion is most likely faster
@@ -771,9 +842,39 @@ class Game(QWidget):
                 if val in cellBoard[i][a]:
                     cellBoard[i][a].remove(val)
                     self.rowContains[i][val-1] -= 1
+
+                    # Update notes for UI
+                    self.curNum = val
+                    self.RightButton(self.buttons[i][a])
+
                 if val in cellBoard[a][j]:
                     cellBoard[a][j].remove(val)
                     self.colContains[j][val-1] -= 1
+
+                    # Update notes for UI
+                    self.curNum = val
+                    self.RightButton(self.buttons[a][j])
+
+                # Update UI
+                self.buttons[i][a].setStyleSheet("QPushButton {color: white; background-color: lightgreen;}")
+                self.buttons[a][j].setStyleSheet("QPushButton {color: white; background-color: lightgreen;}")
+                QtTest.QTest.qWait(self.time)
+                # If it is starting tile: keep light green; if tile is already solved keep blue; if tile is yet to be solved set back to green
+                if a == j:
+                    self.buttons[i][a].setStyleSheet("QPushButton {color: white; background-color: lightgreen;}")
+                else:
+                    if cellBoard[i][a] == []:
+                        self.buttons[i][a].setStyleSheet("QPushButton {color: white; background-color: #017acc;}")
+                    else:
+                        self.buttons[i][a].setStyleSheet("QPushButton {color: white; background-color: #567f4e;}")
+
+                if a == i:
+                    self.buttons[a][j].setStyleSheet("QPushButton {color: white; background-color: lightgreen;}")
+                else:
+                    if cellBoard[a][j] == []:
+                        self.buttons[a][j].setStyleSheet("QPushButton {color: white; background-color: #017acc;}")
+                    else:
+                        self.buttons[a][j].setStyleSheet("QPushButton {color: white; background-color: #567f4e;}")
 
             # Remove from square
             if sq == 0:
@@ -809,6 +910,21 @@ class Game(QWidget):
                         if val in cellBoard[x][y]:
                             cellBoard[x][y].remove(val)
                             self.sqContains[sq][val-1] -= 1
+
+                            # Update notes for UI
+                            self.curNum = val
+                            self.RightButton(self.buttons[x][y])
+
+                        # Update UI
+                        self.buttons[x][y].setStyleSheet("QPushButton {color: white; background-color: lightgreen;}")
+                        QtTest.QTest.qWait(self.time)
+                        if x == i and y == j:
+                            self.buttons[x][y].setStyleSheet("QPushButton {color: white; background-color: lightgreen;}")
+                        else:
+                            if cellBoard[x][y] == []:
+                                self.buttons[x][y].setStyleSheet("QPushButton {color: white; background-color: #017acc;}")
+                            else:
+                                self.buttons[x][y].setStyleSheet("QPushButton {color: white; background-color: #567f4e;}")
 
             return cellBoard
         except:
